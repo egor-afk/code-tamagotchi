@@ -1,94 +1,72 @@
 import * as vscode from 'vscode';
+import { Tamagotchi } from './tamagotchi';
 
-// Простейшая модель питомца
-class Tamagotchi {
-	private health: number = 100
-    private hunger: number = 50;
-    private happiness: number = 50;
-	private level: number = 1;
-	private experience: number = 0;
-    
-    constructor() {}
-
-    // Метод для обновления состояния на основе активности
-    updateBasedOnCodeActivity(): void {
-        this.hunger = Math.max(0, this.hunger - 5);  // Голод уменьшается
-        this.happiness = Math.min(100, this.happiness + 3);  // Счастье увеличивается
-    }
-    
-    getStatus(): string {
-        if (this.hunger > 70) return '😫 Голодный';
-        if (this.happiness < 30) return '😞 Грустный';
-        return '😊 Довольный';
-    }
-    
-    feed(): void {
-        this.hunger = Math.max(0, this.hunger - 20);
-    }
-
-	play(): void{
-		this.hunger = Math.max(0, this.hunger - 5);
-		this.happiness = Math.min(100, this.happiness + 20);
-	}
-	punish(): void {
-        this.hunger = Math.min(100, this.hunger + 20);
-    }
-}
+let pet: Tamagotchi;
+let statusBarItem: vscode.StatusBarItem;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Code Tamagotchi активирован!');
-    // Восстанавливаем состояние или создаем нового питомца
-    const savedState = context.globalState.get('tamagotchiState');
-    const pet = savedState ? 
-        Object.assign(new Tamagotchi(), savedState) : 
-        new Tamagotchi();
-    
+
+    pet = new Tamagotchi(context);
     
     // Создаем статус-бар элемент
-    const statusBarItem = vscode.window.createStatusBarItem(
+    statusBarItem = vscode.window.createStatusBarItem(
         vscode.StatusBarAlignment.Right,
         100
     );
-    statusBarItem.text = `Питомец: ${pet.getStatus()}`;
-    statusBarItem.tooltip = "Кликните, чтобы покормить питомца";
+    updateStatusBar();
     statusBarItem.show();
     
     // Команда для кормления питомца
     const feedCommand = vscode.commands.registerCommand('code-tamagotchi.feed', () => {
         pet.feed();
-        statusBarItem.text = `Питомец: ${pet.getStatus()}`;
+        updateStatusBar();
         vscode.window.showInformationMessage('Питомец покормлен!');
     });
 
 	const playCommand = vscode.commands.registerCommand('code-tamagotchi.play', () => {
         pet.play();
-        statusBarItem.text = `Питомец: ${pet.getStatus()}`;
+        updateStatusBar();
         vscode.window.showInformationMessage('Вы поиграли с питомцем!');
+    });
+
+	const clearCommand = vscode.commands.registerCommand('code-tamagotchi.clear', () => {
+        pet.clear();
+        updateStatusBar();
+        vscode.window.showInformationMessage('Вы очистили историю!');
     });
 
 	const punishCommand = vscode.commands.registerCommand('code-tamagotchi.punish', () => {
         pet.punish();
-        statusBarItem.text = `Питомец: ${pet.getStatus()}`;
+        updateStatusBar();
         vscode.window.showInformationMessage('Питомец наказан!');
     });
 
-     // Сохраняем состояние при изменении
-    const saveState = () => {
-        context.globalState.update('tamagotchiState', {
-            hunger: pet['hunger'],
-            happiness: pet['happiness']
-        });
-    };
-
     // Отслеживаем написание кода
-    const textChangeDisposable = vscode.workspace.onDidChangeTextDocument(() => {
-        pet.updateBasedOnCodeActivity();
-        statusBarItem.text = `Питомец: ${pet.getStatus()}`;
-		saveState();
+    vscode.workspace.onDidChangeTextDocument((event) => {
+    // event содержит информацию об изменениях
+    event.contentChanges.forEach(change => {
+        const addedText = change.text;
+        const newLines = (addedText.match(/\n/g) || []).length;
+        
+        if (newLines > 0) {
+            pet.onCodeWritten(newLines); // Передаем количество новых строк
+            updateStatusBar();
+        }
     });
+});
 
     // Добавляем в контекст для удаления при деактивации
-    context.subscriptions.push(statusBarItem, feedCommand, textChangeDisposable);
+    context.subscriptions.push(statusBarItem, feedCommand, playCommand, punishCommand);
 }
 
-export function deactivate() {}
+function updateStatusBar() {
+    if (pet && statusBarItem) {
+        const emoji = pet.getMoodEmoji();
+        statusBarItem.text = `${emoji} Тамагочи`;
+        statusBarItem.tooltip = pet.getStatusText();
+    }
+}
+
+export function deactivate() {
+}

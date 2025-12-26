@@ -24,6 +24,10 @@
       {
         "command": "code-tamagotchi.play",
         "title": "Поиграть с питомцем"
+      },
+      {
+        "command": "code-tamagotchi.clear",
+        "title": "Очистить историю питомца"
       }
     ]
   },
