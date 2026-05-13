@@ -32,6 +32,10 @@
       {
         "command": "code-tamagotchi.stats",
         "title": "Показать статистику тамагочи"
+      },
+      {
+        "command": "code-tamagotchi.achievements",
+        "title": "Показать достижения"
       }
     ]
   },

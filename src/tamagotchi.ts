@@ -7,6 +7,7 @@ export class Tamagotchi {
 	private level: number = 1;
 	private experience: number = 0;
     private linesWritten: number = 0;
+    private achievements: Set<string> = new Set();
     
     constructor(private context: vscode.ExtensionContext) {
         this.loadState();
@@ -62,6 +63,8 @@ export class Tamagotchi {
             vscode.window.showInformationMessage(`🎉 Опыт UP! +5 XP (всего: ${this.experience})`);
             // Проверяем повышение уровня
             this.checkLevelUp();
+            this.checkAchievements();
+
         }
         this.saveState();
     }
@@ -74,9 +77,56 @@ export class Tamagotchi {
             vscode.window.showInformationMessage(
                 `🎉 УРОВЕНЬ ПОВЫШЕН! Теперь уровень ${this.level}! 🎉`
             );
+            this.checkAchievements();
             // Бонус за уровень: счастье +20
             this.happiness = Math.min(100, this.happiness + 20);
         }
+    }
+
+    private checkAchievements(): void {
+        const achievementsList = [
+            { id: 'lines10', name: '🐣 Первые строки', condition: () => this.linesWritten >= 10, reward: 5 },
+            { id: 'lines100', name: '📝 Новичок', condition: () => this.linesWritten >= 100, reward: 10 },
+            { id: 'lines500', name: '🔥 Код-мастер', condition: () => this.linesWritten >= 500, reward: 20 },
+            { id: 'lines1000', name: '🚀 Легенда', condition: () => this.linesWritten >= 1000, reward: 50 },
+            { id: 'level5', name: '⭐ Ученик', condition: () => this.level >= 5, reward: 30 },
+            { id: 'level10', name: '👑 Мастер', condition: () => this.level >= 10, reward: 60 }
+        ];
+        for (const ach of achievementsList) {
+            if (!this.achievements.has(ach.id) && ach.condition()) {
+                this.achievements.add(ach.id);
+                this.experience += ach.reward;
+                vscode.window.showInformationMessage(
+                    `🏆 ДОСТИЖЕНИЕ ПОЛУЧЕНО: ${ach.name}! +${ach.reward} XP!`
+                );
+                this.saveState();
+            }
+        }
+    }
+
+    getAchievements(): string {
+        const all = [
+            { id: 'lines10', name: '🐣 Первые строки (10 строк)', unlocked: this.achievements.has('lines10') },
+            { id: 'lines100', name: '📝 Новичок (100 строк)', unlocked: this.achievements.has('lines100') },
+            { id: 'lines500', name: '🔥 Код-мастер (500 строк)', unlocked: this.achievements.has('lines500') },
+            { id: 'lines1000', name: '🚀 Легенда (1000 строк)', unlocked: this.achievements.has('lines1000') },
+            { id: 'level5', name: '⭐ Ученик (5 уровень)', unlocked: this.achievements.has('level5') },
+            { id: 'level10', name: '👑 Мастер (10 уровень)', unlocked: this.achievements.has('level10') }
+        ];
+        const unlockedOnly = all.filter(a => a.unlocked === true);
+        if (unlockedOnly.length === 0) {
+            return '🏆 ПОЛУЧЕННЫЕ ДОСТИЖЕНИЯ 🏆\n\nПока нет достижений. Пиши код и повышай уровень!';
+        }
+        let result = '🏆 ПОЛУЧЕННЫЕ ДОСТИЖЕНИЯ 🏆\n\n';
+        for (const a of unlockedOnly) {
+            result += `✅ ${a.name}\n`;
+        }
+        return result;
+    }
+
+    clearAchievements(): void {
+        this.achievements.clear();
+        this.saveState();
     }
 
     getStats() {
@@ -105,7 +155,8 @@ export class Tamagotchi {
             happiness: this.happiness,
             level: this.level,
             experience: this.experience,
-            linesWritten: this.linesWritten
+            linesWritten: this.linesWritten,
+            achievements: Array.from(this.achievements)
         });
     }
 
@@ -117,6 +168,9 @@ export class Tamagotchi {
             this.level = saved.level || 1;
             this.experience = saved.experience || 0;
             this.linesWritten = saved.linesWritten || 0;
+            if (saved.achievements) {
+                this.achievements = new Set(saved.achievements);
+            }
         }
     }
 

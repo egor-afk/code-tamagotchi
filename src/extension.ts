@@ -32,6 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const clearCommand = vscode.commands.registerCommand('code-tamagotchi.clear', () => {
         pet.clear();
+        pet.clearAchievements();
         updateStatusBar();
         vscode.window.showInformationMessage('Вы очистили историю!');
     });
@@ -53,6 +54,11 @@ export function activate(context: vscode.ExtensionContext) {
         );
     });
 
+    const achievementsCommand = vscode.commands.registerCommand('code-tamagotchi.achievements', () => {
+        const list = pet.getAchievements();
+        vscode.window.showInformationMessage(list);
+    });
+
     // Отслеживаем написание кода
     vscode.workspace.onDidChangeTextDocument((event) => {
     // event содержит информацию об изменениях
@@ -68,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
 });
 
     // Добавляем в контекст для удаления при деактивации
-    context.subscriptions.push(statusBarItem, feedCommand, playCommand, punishCommand, clearCommand, statsCommand);
+    context.subscriptions.push(statusBarItem, feedCommand, playCommand, punishCommand, clearCommand, statsCommand, achievementsCommand);
 }
 
 function updateStatusBar() {
