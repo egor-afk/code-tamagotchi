@@ -10,6 +10,7 @@ export class Tamagotchi {
     
     constructor(private context: vscode.ExtensionContext) {
         this.loadState();
+        this.startDecayTimer();
     }
 
     // Метод для обновления состояния на основе активности
@@ -46,27 +47,45 @@ export class Tamagotchi {
     }
 
 	punish(): void {
-        this.hunger = Math.min(100, this.hunger + 20);
+        this.happiness = Math.max(0, this.happiness - 20);
         this.saveState();
     }
 
     onCodeWritten(newLines: number) {
         this.linesWritten += newLines;
-        // Каждые 10 строк увеличиваем счастье и голод
+    
+        // Каждые 10 строк даем эффекты
         if (this.linesWritten % 10 === 0) {
-            this.hunger = Math.min(100, this.hunger + 2); // Программирование утомляет
+            this.hunger = Math.min(100, this.hunger + 2);      // Программирование утомляет
             this.happiness = Math.min(100, this.happiness + 1); // Повышает счастье
-            this.experience = Math.min(100, this.experience + 5);
-             vscode.window.showInformationMessage(`🎉 Опыт UP! Теперь опыт ${this.experience}!`);
-            if(this.experience >= 100){
-                this.level++;
-                this.experience = 0;
-                 vscode.window.showInformationMessage(
-                `🎉 Уровень UP! Теперь уровень ${this.level}!`
-            );
-            }
+            this.experience += 5;
+            vscode.window.showInformationMessage(`🎉 Опыт UP! +5 XP (всего: ${this.experience})`);
+            // Проверяем повышение уровня
+            this.checkLevelUp();
         }
         this.saveState();
+    }
+
+    private checkLevelUp(): void {
+        const experienceNeeded = this.level * 100;  // 1 уровень = 100 XP, 2 уровень = 200 XP и т.д.
+        while (this.experience >= experienceNeeded) {
+            this.experience -= experienceNeeded;
+            this.level++;
+            vscode.window.showInformationMessage(
+                `🎉 УРОВЕНЬ ПОВЫШЕН! Теперь уровень ${this.level}! 🎉`
+            );
+            // Бонус за уровень: счастье +20
+            this.happiness = Math.min(100, this.happiness + 20);
+        }
+    }
+
+    getStats() {
+        return {
+            hunger: Math.round(this.hunger),
+            happiness: Math.round(this.happiness),
+            level: this.level,
+            linesWritten: this.linesWritten
+        };
     }
 
     getMoodEmoji() {
@@ -99,5 +118,32 @@ export class Tamagotchi {
             this.experience = saved.experience || 0;
             this.linesWritten = saved.linesWritten || 0;
         }
+    }
+
+    private decayTimer: NodeJS.Timeout | undefined;
+
+    private startDecayTimer(): void {
+        if (this.decayTimer) {
+            clearInterval(this.decayTimer);
+        }
+    
+        this.decayTimer = setInterval(() => {
+            this.hunger = Math.min(100, this.hunger + 1);
+            this.happiness = Math.max(0, this.happiness - 0.5);
+            if (this.hunger > 80) {
+                vscode.window.showWarningMessage('😫 Питомец очень голоден! Покормите его!');
+            }
+            if (this.happiness < 20) {
+                vscode.window.showWarningMessage('😞 Питомец очень грустный! Поиграйте с ним!');
+            }
+            this.saveState();
+        }, 60000); // Раз в минуту
+    }
+
+    dispose(): void {
+        if (this.decayTimer) {
+            clearInterval(this.decayTimer);
+        }
+        this.saveState();
     }
 }

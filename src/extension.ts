@@ -42,6 +42,17 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage('Питомец наказан!');
     });
 
+    const statsCommand = vscode.commands.registerCommand('code-tamagotchi.stats', () => {
+        const stats = pet.getStats();
+        vscode.window.showInformationMessage(
+            `📊 СТАТИСТИКА ПИТОМЦА 📊\n` +
+            `🍖 Голод: ${stats.hunger}%\n` +
+            `😊 Счастье: ${stats.happiness}%\n` +
+            `📈 Уровень: ${stats.level}\n` +
+            `📝 Написано строк: ${stats.linesWritten}`
+        );
+    });
+
     // Отслеживаем написание кода
     vscode.workspace.onDidChangeTextDocument((event) => {
     // event содержит информацию об изменениях
@@ -57,13 +68,13 @@ export function activate(context: vscode.ExtensionContext) {
 });
 
     // Добавляем в контекст для удаления при деактивации
-    context.subscriptions.push(statusBarItem, feedCommand, playCommand, punishCommand);
+    context.subscriptions.push(statusBarItem, feedCommand, playCommand, punishCommand, clearCommand, statsCommand);
 }
 
 function updateStatusBar() {
     if (pet && statusBarItem) {
         const emoji = pet.getMoodEmoji();
-        statusBarItem.text = `${emoji} Тамагочи`;
+        statusBarItem.text = `${emoji} Тамагочи Lv.${pet.getStats().level}`;
         statusBarItem.tooltip = pet.getStatusText();
     }
 }

@@ -28,6 +28,10 @@
       {
         "command": "code-tamagotchi.clear",
         "title": "Очистить историю питомца"
+      },
+      {
+        "command": "code-tamagotchi.stats",
+        "title": "Показать статистику тамагочи"
       }
     ]
   },
