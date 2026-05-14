@@ -1,5 +1,16 @@
 import * as vscode from 'vscode';
 
+export type SkinId = 'cat' | 'dog' | 'hedgehog' | 'default';
+
+const SKIN_IDS: readonly SkinId[] = ['default', 'cat', 'dog', 'hedgehog'];
+
+function parseSkinId(value: unknown): SkinId | undefined {
+	if (typeof value === 'string' && (SKIN_IDS as readonly string[]).includes(value)) {
+		return value as SkinId;
+	}
+	return undefined;
+}
+
 export class Tamagotchi {
 	private health: number = 100
     private hunger: number = 50;
@@ -8,7 +19,7 @@ export class Tamagotchi {
 	private experience: number = 0;
     private linesWritten: number = 0;
     private achievements: Set<string> = new Set();
-    
+	private currentSkin: SkinId = 'default';    
     constructor(private context: vscode.ExtensionContext) {
         this.loadState();
         this.startDecayTimer();
@@ -161,6 +172,15 @@ export class Tamagotchi {
         return `Уровень ${this.level} | Опыт ${this.experience} | 🍖 ${Math.round(this.hunger)}% | 😊 ${Math.round(this.happiness)}%`;
     }
 
+	getSkin(): SkinId {
+		return this.currentSkin;
+	}
+
+	setSkin(skin: SkinId): void {
+		this.currentSkin = skin;
+		this.saveState();
+	}
+
     private saveState() {
         this.context.globalState.update('tamagotchiState', {
             hunger: this.hunger,
@@ -168,8 +188,10 @@ export class Tamagotchi {
             level: this.level,
             experience: this.experience,
             linesWritten: this.linesWritten,
-            achievements: Array.from(this.achievements)
+            achievements: Array.from(this.achievements),
+            skin: this.currentSkin,
         });
+		void this.context.globalState.update('skin', this.currentSkin);
     }
 
     private loadState() {
@@ -184,6 +206,9 @@ export class Tamagotchi {
                 this.achievements = new Set(saved.achievements);
             }
         }
+		const fromBlob = parseSkinId(saved?.skin);
+		const fromKey = parseSkinId(this.context.globalState.get('skin'));
+		this.currentSkin = fromBlob ?? fromKey ?? 'default';
     }
 
     private decayTimer: NodeJS.Timeout | undefined;

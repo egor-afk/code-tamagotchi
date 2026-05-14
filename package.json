@@ -43,6 +43,10 @@
       {
         "command": "code-tamagotchi.showPetView",
         "title": "Tamagotchi: Show Pet View"
+      },
+      {
+        "command": "code-tamagotchi.changeSkin",
+        "title": "Tamagotchi: Change Skin"
       }
     ],
     "viewsContainers": {

@@ -1,11 +1,16 @@
 import * as vscode from 'vscode';
 import { registerGitExperienceRewards } from './gitXp';
 import { PetViewProvider } from './petView';
+import type { SkinId } from './tamagotchi';
 import { Tamagotchi } from './tamagotchi';
 
 let pet: Tamagotchi;
 let statusBarItem: vscode.StatusBarItem;
 let petViewProvider: PetViewProvider | undefined;
+
+interface SkinQuickPickItem extends vscode.QuickPickItem {
+	skinId: SkinId;
+}
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Code Tamagotchi активирован!');
@@ -75,6 +80,27 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage(list);
     });
 
+	const changeSkinCommand = vscode.commands.registerCommand('code-tamagotchi.changeSkin', async () => {
+		if (!pet || !petViewProvider) {
+			return;
+		}
+		const items: SkinQuickPickItem[] = [
+			{ label: '🐱 Кот', description: 'Пушистый и независимый', skinId: 'cat' },
+			{ label: '🐶 Собака', description: 'Верный друг', skinId: 'dog' },
+			{ label: '🦔 Ёжик', description: 'Колючий, но милый', skinId: 'hedgehog' },
+			{ label: '↩️ По умолчанию', description: 'Стандартный питомец', skinId: 'default' },
+		];
+		const picked = await vscode.window.showQuickPick(items, {
+			placeHolder: 'Выберите внешний вид питомца',
+		});
+		if (!picked) {
+			return;
+		}
+		pet.setSkin(picked.skinId);
+		petViewProvider.setSkin(picked.skinId);
+		void vscode.window.showInformationMessage('Внешний вид питомца обновлён.');
+	});
+
     // Отслеживаем написание кода
     vscode.workspace.onDidChangeTextDocument((event) => {
     // event содержит информацию об изменениях
@@ -98,6 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
         clearCommand,
         statsCommand,
         achievementsCommand,
+        changeSkinCommand,
         showPetViewCommand
     );
 }

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { Tamagotchi } from './tamagotchi';
+import type { SkinId, Tamagotchi } from './tamagotchi';
 
 function getNonce(): string {
 	let text = '';
@@ -13,7 +13,12 @@ function getNonce(): string {
 export class PetViewProvider implements vscode.WebviewViewProvider {
 	public static readonly viewType = 'code-tamagotchi.petView';
 
-	private static readonly petImagePath = ['media', 'pet-icon.svg'] as const;
+	private static readonly skinFileMap: Record<SkinId, readonly string[]> = {
+		default: ['media', 'pet-icon.svg'],
+		cat: ['media', 'pet-icon.svg'],
+		dog: ['media', 'dog-pet.svg'],
+		hedgehog: ['media', 'ezhik-pet.svg'],
+	};
 
 	private _view?: vscode.WebviewView;
 
@@ -47,6 +52,16 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 		});
 	}
 
+	public setSkin(skin: SkinId): void {
+		if (!this._view) {
+			return;
+		}
+		const segments = PetViewProvider.skinFileMap[skin];
+		const uri = vscode.Uri.joinPath(this._extensionUri, ...segments);
+		const skinSrc = this._view.webview.asWebviewUri(uri).toString();
+		this._view.webview.postMessage({ type: 'changeSkin', src: skinSrc });
+	}
+
 	public refresh(): void {
 		if (!this._view) {
 			return;
@@ -63,9 +78,9 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 
 	private _getHtml(webview: vscode.Webview): string {
 		const nonce = getNonce();
-		const petSrc = webview
-			.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, ...PetViewProvider.petImagePath))
-			.toString();
+		const skinId = this._tamagotchi.getSkin();
+		const segments = PetViewProvider.skinFileMap[skinId];
+		const petSrc = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, ...segments)).toString();
 
 		return `<!DOCTYPE html>
 <html lang="ru">
@@ -99,7 +114,7 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 			align-items: center;
 			gap: 8px;
 		}
-		#pet {
+		#pet-image {
 			width: 256px;
 			height: 256px;
 			object-fit: contain;
@@ -114,7 +129,7 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 			font-size: 22px;
 			line-height: 1.2;
 		}
-		#moodEmoji {
+		#mood {
 			font-size: 28px;
 		}
 		#stats {
@@ -127,31 +142,38 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 </head>
 <body>
 	<div id="wrap">
-		<img id="pet" src="${petSrc}" width="256" height="256" alt="Питомец" />
+		<img id="pet-image" src="${petSrc}" width="256" height="256" alt="Питомец" />
 		<div id="moodRow">
-			<span id="moodEmoji" title="Настроение">😐</span>
+			<span id="mood" title="Настроение">😐</span>
 		</div>
 		<div id="stats"></div>
 	</div>
 	<script nonce="${nonce}">
 		const vscode = acquireVsCodeApi();
-		const moodEmoji = document.getElementById('moodEmoji');
+		const moodEl = document.getElementById('mood');
 		const statsEl = document.getElementById('stats');
 
 		function applyState(data) {
-			if (data.mood != null) {
-				moodEmoji.textContent = data.mood;
+			if (data.mood != null && moodEl) {
+				moodEl.textContent = data.mood;
 			}
 			const lv = data.level != null ? data.level : '?';
 			const hu = data.hunger != null ? data.hunger : '?';
 			const ha = data.happiness != null ? data.happiness : '?';
-			statsEl.textContent = 'Уровень ' + lv + ' · Голод ' + hu + '% · Счастье ' + ha + '%';
+			if (statsEl) {
+				statsEl.textContent = 'Уровень ' + lv + ' · Голод ' + hu + '% · Счастье ' + ha + '%';
+			}
 		}
 
 		window.addEventListener('message', (event) => {
 			const msg = event.data;
 			if (msg && msg.type === 'state') {
 				applyState(msg);
+			} else if (msg && msg.type === 'changeSkin' && msg.src) {
+				const img = document.getElementById('pet-image');
+				if (img) {
+					img.src = msg.src;
+				}
 			}
 		});
 
