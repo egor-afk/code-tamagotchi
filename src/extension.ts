@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { registerGitExperienceRewards } from './gitXp';
 import { PetViewProvider } from './petView';
 import { Tamagotchi } from './tamagotchi';
 
@@ -10,6 +11,8 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('Code Tamagotchi активирован!');
 
     pet = new Tamagotchi(context);
+
+    context.subscriptions.push(registerGitExperienceRewards(pet, updateStatusBar));
 
     petViewProvider = new PetViewProvider(pet, context.extensionUri);
     context.subscriptions.push(

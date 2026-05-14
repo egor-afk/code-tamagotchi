@@ -69,6 +69,18 @@ export class Tamagotchi {
         this.saveState();
     }
 
+    /** Начисление опыта (например, за коммит или пуш в Git). */
+    addExperience(amount: number, reason: string): void {
+        if (amount <= 0) {
+            return;
+        }
+        this.experience += amount;
+        vscode.window.showInformationMessage(`🎉 ${reason}: +${amount} XP (всего: ${this.experience})`);
+        this.checkLevelUp();
+        this.checkAchievements();
+        this.saveState();
+    }
+
     private checkLevelUp(): void {
         const experienceNeeded = this.level * 100;  // 1 уровень = 100 XP, 2 уровень = 200 XP и т.д.
         while (this.experience >= experienceNeeded) {
