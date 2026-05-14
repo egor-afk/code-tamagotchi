@@ -1,13 +1,26 @@
 import * as vscode from 'vscode';
+import { PetViewProvider } from './petView';
 import { Tamagotchi } from './tamagotchi';
 
 let pet: Tamagotchi;
 let statusBarItem: vscode.StatusBarItem;
+let petViewProvider: PetViewProvider | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Code Tamagotchi активирован!');
 
     pet = new Tamagotchi(context);
+
+    petViewProvider = new PetViewProvider(pet, context.extensionUri);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(PetViewProvider.viewType, petViewProvider, {
+            webviewOptions: { retainContextWhenHidden: true },
+        })
+    );
+
+    const showPetViewCommand = vscode.commands.registerCommand('code-tamagotchi.showPetView', async () => {
+        await vscode.commands.executeCommand('workbench.view.extension.code-tamagotchi');
+    });
     
     // Создаем статус-бар элемент
     statusBarItem = vscode.window.createStatusBarItem(
@@ -74,7 +87,16 @@ export function activate(context: vscode.ExtensionContext) {
 });
 
     // Добавляем в контекст для удаления при деактивации
-    context.subscriptions.push(statusBarItem, feedCommand, playCommand, punishCommand, clearCommand, statsCommand, achievementsCommand);
+    context.subscriptions.push(
+        statusBarItem,
+        feedCommand,
+        playCommand,
+        punishCommand,
+        clearCommand,
+        statsCommand,
+        achievementsCommand,
+        showPetViewCommand
+    );
 }
 
 function updateStatusBar() {
@@ -83,6 +105,7 @@ function updateStatusBar() {
         statusBarItem.text = `${emoji} Тамагочи Lv.${pet.getStats().level}`;
         statusBarItem.tooltip = pet.getStatusText();
     }
+    petViewProvider?.refresh();
 }
 
 export function deactivate() {

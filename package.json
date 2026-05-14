@@ -36,8 +36,30 @@
       {
         "command": "code-tamagotchi.achievements",
         "title": "Показать достижения"
+      },
+      {
+        "command": "code-tamagotchi.showPetView",
+        "title": "Tamagotchi: Show Pet View"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "code-tamagotchi",
+          "title": "Tamagotchi",
+          "icon": "media/pet-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "code-tamagotchi": [
+        {
+          "type": "webview",
+          "id": "code-tamagotchi.petView",
+          "name": "Питомец"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
