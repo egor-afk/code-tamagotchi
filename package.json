@@ -42,18 +42,18 @@
       },
       {
         "command": "code-tamagotchi.showPetView",
-        "title": "Tamagotchi: Show Pet View"
+        "title": "Показать панель питомца"
       },
       {
         "command": "code-tamagotchi.changeSkin",
-        "title": "Tamagotchi: Change Skin"
+        "title": "Сменить внешний вид питомца"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "code-tamagotchi",
-          "title": "Tamagotchi",
+          "title": "Тамагочи",
           "icon": "media/pet-icon.svg"
         }
       ]
