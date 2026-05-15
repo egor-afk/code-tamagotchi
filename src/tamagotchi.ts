@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import type { PetViewProvider } from './petView';
 
 export type SkinId = 'cat' | 'dog' | 'hedgehog' | 'default';
 
@@ -20,6 +21,9 @@ export class Tamagotchi {
     private linesWritten: number = 0;
     private achievements: Set<string> = new Set();
 	private currentSkin: SkinId = 'default';
+	/** Разблокированные аксессуары: 'briefcase' (ур. 5), 'crown' (ур. 10) */
+	private accessories: string[] = [];
+	private viewProvider?: PetViewProvider;
 	private idleTimer: NodeJS.Timeout | undefined;
 	private isIdle: boolean = false;
 	private readonly idleTimeout: number;
@@ -63,7 +67,9 @@ export class Tamagotchi {
 	    this.level = 1;
 	    this.experience = 0;
         this.linesWritten = 0;
+		this.accessories = [];
         this.saveState();
+		this.viewProvider?.updateAccessories(this.accessories);
     }
 
 	punish(): void {
@@ -112,7 +118,43 @@ export class Tamagotchi {
             // Бонус за уровень: счастье +20
             this.happiness = Math.min(100, this.happiness + 20);
         }
+		this.unlockAccessoriesByLevel(true);
     }
+
+	/** Связь с WebView для обновления аксессуаров */
+	setViewProvider(provider: PetViewProvider): void {
+		this.viewProvider = provider;
+	}
+
+	getAccessories(): string[] {
+		return [...this.accessories];
+	}
+
+	/** Разблокировка аксессуаров по текущему уровню */
+	private unlockAccessoriesByLevel(notify: boolean): void {
+		let changed = false;
+
+		if (this.level >= 5 && !this.accessories.includes('briefcase')) {
+			this.accessories.push('briefcase');
+			changed = true;
+			if (notify) {
+				void vscode.window.showInformationMessage('🎒 Получен аксессуар: Портфель (Ученик)');
+			}
+		}
+
+		if (this.level >= 10 && !this.accessories.includes('crown')) {
+			this.accessories.push('crown');
+			changed = true;
+			if (notify) {
+				void vscode.window.showInformationMessage('👑 Получен аксессуар: Корона (Мастер)');
+			}
+		}
+
+		if (changed) {
+			this.saveState();
+			this.viewProvider?.updateAccessories(this.accessories);
+		}
+	}
 
     private checkAchievements(): void {
         const achievementsList = [
@@ -228,8 +270,10 @@ export class Tamagotchi {
             linesWritten: this.linesWritten,
             achievements: Array.from(this.achievements),
             skin: this.currentSkin,
+			accessories: this.accessories,
         });
 		void this.context.globalState.update('skin', this.currentSkin);
+		void this.context.globalState.update('accessories', this.accessories);
     }
 
     private loadState() {
@@ -247,6 +291,17 @@ export class Tamagotchi {
 		const fromBlob = parseSkinId(saved?.skin);
 		const fromKey = parseSkinId(this.context.globalState.get('skin'));
 		this.currentSkin = fromBlob ?? fromKey ?? 'default';
+
+		const savedAccessories = this.context.globalState.get<string[]>('accessories');
+		if (Array.isArray(savedAccessories)) {
+			this.accessories = savedAccessories.filter((id) => id === 'briefcase' || id === 'crown');
+		} else if (Array.isArray(saved?.accessories)) {
+			this.accessories = saved.accessories.filter((id: string) => id === 'briefcase' || id === 'crown');
+		} else {
+			this.accessories = [];
+		}
+		// Синхронизация с уровнем без уведомлений (например, после обновления расширения)
+		this.unlockAccessoriesByLevel(false);
     }
 
     private decayTimer: NodeJS.Timeout | undefined;

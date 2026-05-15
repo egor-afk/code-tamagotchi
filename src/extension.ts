@@ -22,6 +22,8 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(registerGitExperienceRewards(pet, updateStatusBar));
 
     petViewProvider = new PetViewProvider(pet, context.extensionUri);
+	pet.setViewProvider(petViewProvider);
+	petViewProvider.updateAccessories(pet.getAccessories());
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(PetViewProvider.viewType, petViewProvider, {
             webviewOptions: { retainContextWhenHidden: true },

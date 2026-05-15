@@ -40,6 +40,7 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 		webviewView.webview.onDidReceiveMessage((msg) => {
 			if (msg?.type === 'ready') {
 				this.refresh();
+				this.updateAccessories(this._tamagotchi.getAccessories());
 			}
 		});
 
@@ -76,11 +77,25 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 		});
 	}
 
+	// Обновляет отображение аксессуаров в WebView
+	public updateAccessories(accessories: string[]): void {
+		if (!this._view) {
+			return;
+		}
+		this._view.webview.postMessage({ type: 'updateAccessories', accessories });
+	}
+
 	private _getHtml(webview: vscode.Webview): string {
 		const nonce = getNonce();
 		const skinId = this._tamagotchi.getSkin();
 		const segments = PetViewProvider.skinFileMap[skinId];
 		const petSrc = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, ...segments)).toString();
+		const crownSrc = webview
+			.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'crown-svgrepo-com.svg'))
+			.toString();
+		const briefcaseSrc = webview
+			.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'briefcase-svgrepo-com.svg'))
+			.toString();
 
 		return `<!DOCTYPE html>
 <html lang="ru">
@@ -114,6 +129,12 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 			align-items: center;
 			gap: 8px;
 		}
+		#pet-container {
+			position: relative;
+			display: inline-block;
+			width: 256px;
+			height: 256px;
+		}
 		#pet-image {
 			width: 256px;
 			height: 256px;
@@ -121,6 +142,26 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 			image-rendering: pixelated;
 			image-rendering: crisp-edges;
 			border-radius: 4px;
+			display: block;
+		}
+		.accessory {
+			position: absolute;
+			pointer-events: none;
+			object-fit: contain;
+			display: none;
+		}
+		#acc-crown {
+			bottom: -10px;
+			left: -10px;
+			transform: none;
+			width: 40px;
+			height: 40px;
+		}
+		#acc-briefcase {
+			bottom: -10px;
+			right: -10px;
+			width: 50px;
+			height: 50px;
 		}
 		#moodRow {
 			display: flex;
@@ -142,7 +183,11 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 </head>
 <body>
 	<div id="wrap">
-		<img id="pet-image" src="${petSrc}" width="256" height="256" alt="Питомец" />
+		<div id="pet-container">
+			<img id="pet-image" src="${petSrc}" width="256" height="256" alt="Питомец" />
+			<img id="acc-crown" class="accessory" src="${crownSrc}" width="40" height="40" alt="Корона" />
+			<img id="acc-briefcase" class="accessory" src="${briefcaseSrc}" width="50" height="50" alt="Портфель" />
+		</div>
 		<div id="moodRow">
 			<span id="mood" title="Настроение">😐</span>
 		</div>
@@ -152,6 +197,18 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 		const vscode = acquireVsCodeApi();
 		const moodEl = document.getElementById('mood');
 		const statsEl = document.getElementById('stats');
+		const crownEl = document.getElementById('acc-crown');
+		const briefcaseEl = document.getElementById('acc-briefcase');
+
+		function applyAccessories(accessories) {
+			const list = Array.isArray(accessories) ? accessories : [];
+			if (crownEl) {
+				crownEl.style.display = list.includes('crown') ? 'block' : 'none';
+			}
+			if (briefcaseEl) {
+				briefcaseEl.style.display = list.includes('briefcase') ? 'block' : 'none';
+			}
+		}
 
 		function applyState(data) {
 			if (data.mood != null && moodEl) {
@@ -174,6 +231,8 @@ export class PetViewProvider implements vscode.WebviewViewProvider {
 				if (img) {
 					img.src = msg.src;
 				}
+			} else if (msg && msg.type === 'updateAccessories') {
+				applyAccessories(msg.accessories);
 			}
 		});
 
