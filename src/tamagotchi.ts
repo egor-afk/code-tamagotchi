@@ -19,8 +19,16 @@ export class Tamagotchi {
 	private experience: number = 0;
     private linesWritten: number = 0;
     private achievements: Set<string> = new Set();
-	private currentSkin: SkinId = 'default';    
+	private currentSkin: SkinId = 'default';
+	private idleTimer: NodeJS.Timeout | undefined;
+	private isIdle: boolean = false;
+	private readonly idleTimeout: number;
+
     constructor(private context: vscode.ExtensionContext) {
+		const minutesRaw = vscode.workspace.getConfiguration('code-tamagotchi').get<number>('idleTimeoutMinutes', 20);
+		let minutes = typeof minutesRaw === 'number' && !Number.isNaN(minutesRaw) ? minutesRaw : 20;
+		minutes = Math.min(120, Math.max(1, Math.round(minutes)));
+		this.idleTimeout = minutes * 60 * 1000;
         this.loadState();
         this.startDecayTimer();
     }
@@ -181,6 +189,36 @@ export class Tamagotchi {
 		this.saveState();
 	}
 
+	startIdleTimer(): void {
+		if (this.idleTimer !== undefined) {
+			clearTimeout(this.idleTimer);
+			this.idleTimer = undefined;
+		}
+		this.idleTimer = setTimeout(() => {
+			this.idleTimer = undefined;
+			this.handleIdle();
+		}, this.idleTimeout);
+	}
+
+	resetIdleTimer(): void {
+		if (this.isIdle) {
+			this.handleActivity();
+		}
+		this.startIdleTimer();
+	}
+
+	private handleIdle(): void {
+		if (this.isIdle) {
+			return;
+		}
+		this.isIdle = true;
+		void vscode.window.showInformationMessage('😞 Твой питомец скучает... Возвращайся к коду!');
+	}
+
+	private handleActivity(): void {
+		this.isIdle = false;
+	}
+
     private saveState() {
         this.context.globalState.update('tamagotchiState', {
             hunger: this.hunger,
@@ -234,7 +272,12 @@ export class Tamagotchi {
     dispose(): void {
         if (this.decayTimer) {
             clearInterval(this.decayTimer);
+			this.decayTimer = undefined;
         }
+		if (this.idleTimer !== undefined) {
+			clearTimeout(this.idleTimer);
+			this.idleTimer = undefined;
+		}
         this.saveState();
     }
 }

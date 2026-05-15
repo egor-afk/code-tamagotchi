@@ -17,6 +17,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     pet = new Tamagotchi(context);
 
+	pet.startIdleTimer();
+
     context.subscriptions.push(registerGitExperienceRewards(pet, updateStatusBar));
 
     petViewProvider = new PetViewProvider(pet, context.extensionUri);
@@ -113,7 +115,23 @@ export function activate(context: vscode.ExtensionContext) {
             updateStatusBar();
         }
     });
-});
+	});
+
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeTextDocument(() => {
+			pet.resetIdleTimer();
+		})
+	);
+	context.subscriptions.push(
+		vscode.window.onDidChangeActiveTextEditor(() => {
+			pet.resetIdleTimer();
+		})
+	);
+	context.subscriptions.push(
+		new vscode.Disposable(() => {
+			pet.dispose();
+		})
+	);
 
     // Добавляем в контекст для удаления при деактивации
     context.subscriptions.push(

@@ -66,6 +66,18 @@
           "name": "Питомец"
         }
       ]
+    },
+    "configuration": {
+      "title": "Code Tamagotchi",
+      "properties": {
+        "code-tamagotchi.idleTimeoutMinutes": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 120,
+          "description": "Через сколько минут бездействия питомец начнёт скучать"
+        }
+      }
     }
   },
   "scripts": {
