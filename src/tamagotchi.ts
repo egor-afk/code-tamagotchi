@@ -300,7 +300,7 @@ export class Tamagotchi {
 		} else {
 			this.accessories = [];
 		}
-		// Синхронизация с уровнем без уведомлений (например, после обновления расширения)
+		
 		this.unlockAccessoriesByLevel(false);
     }
 

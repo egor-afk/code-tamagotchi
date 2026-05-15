@@ -3,6 +3,15 @@
   "displayName": "Code Tamagotchi",
   "description": "Tamagotchi pet that grows with your code",
   "version": "0.0.1",
+  "publisher": "code-tamagotchi",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/egor-afk/code-tamagotchi.git"
+  },
+  "homepage": "https://github.com/egor-afk/code-tamagotchi/tree/test",
+  "bugs": {
+    "url": "https://github.com/egor-afk/code-tamagotchi/issues"
+  },
   "engines": {
     "vscode": "^1.107.0"
   },
