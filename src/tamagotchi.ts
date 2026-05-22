@@ -13,7 +13,7 @@ function parseSkinId(value: unknown): SkinId | undefined {
 }
 
 export class Tamagotchi {
-	private health: number = 100
+	private health: number = 100;
     private hunger: number = 50;
     private happiness: number = 50;
 	private level: number = 1;
@@ -21,7 +21,7 @@ export class Tamagotchi {
     private linesWritten: number = 0;
     private achievements: Set<string> = new Set();
 	private currentSkin: SkinId = 'default';
-	/** Разблокированные аксессуары: 'briefcase' (ур. 5), 'crown' (ур. 10) */
+	/*Разблокированные аксессуары: 'briefcase' (ур. 5), 'crown' (ур. 10) */
 	private accessories: string[] = [];
 	private viewProvider?: PetViewProvider;
 	private idleTimer: NodeJS.Timeout | undefined;
@@ -94,7 +94,7 @@ export class Tamagotchi {
         this.saveState();
     }
 
-    /** Начисление опыта (например, за коммит или пуш в Git). */
+    /* Начисление опыта (например, за коммит или пуш в Git). */
     addExperience(amount: number, reason: string): void {
         if (amount <= 0) {
             return;
@@ -121,7 +121,7 @@ export class Tamagotchi {
 		this.unlockAccessoriesByLevel(true);
     }
 
-	/** Связь с WebView для обновления аксессуаров */
+	/*Связь с WebView для обновления аксессуаров */
 	setViewProvider(provider: PetViewProvider): void {
 		this.viewProvider = provider;
 	}
@@ -130,7 +130,7 @@ export class Tamagotchi {
 		return [...this.accessories];
 	}
 
-	/** Разблокировка аксессуаров по текущему уровню */
+	/*Разблокировка аксессуаров по текущему уровню */
 	private unlockAccessoriesByLevel(notify: boolean): void {
 		let changed = false;
 

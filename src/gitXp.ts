@@ -14,7 +14,7 @@ interface GitRepositoryState {
 	readonly onDidChange: vscode.Event<void>;
 }
 
-/** Репозиторий Git API {@link onDidPush}. */
+/*Репозиторий Git API */
 interface GitRepository {
 	readonly rootUri: vscode.Uri;
 	readonly state: GitRepositoryState;
@@ -44,10 +44,10 @@ function readHeadSnapshot(repo: GitRepository): HeadSnapshot {
 	return { commit: h.commit, ahead: h.ahead };
 }
 
-/**
- * Git-интеграция
- * Коммит: {@link GitRepository.onDidCommit}.
- * Пуш: {@link GitRepository.onDidPush}, если есть; иначе запасной вариант по уменьшению {@link GitBranchHead.ahead}.
+/*
+  Git-интеграция
+  Коммит: {GitRepository.onDidCommit}.
+  Пуш: {GitRepository.onDidPush}, если есть; иначе запасной вариант по уменьшению {GitBranchHead.ahead}.
  */
 export function registerGitExperienceRewards(
 	pet: Tamagotchi,
